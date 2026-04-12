@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioSolarLab — 3D Photovoltaic Simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <svg viewBox="0 0 30 30" fill="none" width="26" height="26">
+      <path d="M15 2C8 6 2 12 4 20C6 27 10 29 15 29S24 27 26 20C28 12 22 6 15 2Z" stroke="#00d4ff" stroke-width="1.3"></path>
+      <path d="M15 2C15 2 10 10 10 18C10 24 12.5 29 15 29" stroke="#00d4ff" stroke-width="0.9" opacity=".5"></path>
+      <path d="M15 2C15 2 20 10 20 18C20 24 17.5 29 15 29" stroke="#00d4ff" stroke-width="0.9" opacity=".5"></path>
+      <circle cx="15" cy="15" r="2.8" fill="#ffd700"></circle>
+    </svg>
+    <span class="nav-wordmark">BioSolar<em>Lab</em></span>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link active" href="#simulation">Simulation</a>
+    <a class="nav-link" href="#microsim">Microscopic</a>
+    <a class="nav-link" href="#graphs">Graphs</a>
+    <a class="nav-link" href="#team">Team</a>
+  </div>
+  <div class="nav-right">
+    <span class="engine-dot" id="engineDot"></span>
+  </div>
+</nav>
+
+<!-- HERO METRICS -->
+<div class="hero-bar">
+  <div class="hm-col">
+    <span class="hm-val cyan-col" id="flatEffTag">—</span>
+    <span class="hm-key">Flat Absorption Ratio</span>
+  </div>
+  <div class="hm-sep"></div>
+  <div class="hm-col center">
+    <span class="hm-gain" id="gainValue">—</span>
+    <span class="hm-key">Absorption Advantage</span>
+  </div>
+  <div class="hm-sep"></div>
+  <div class="hm-col right">
+    <span class="hm-val violet-col" id="bflyEffTag">—</span>
+    <span class="hm-key">Butterfly Absorption Ratio</span>
+  </div>
+</div>
+
+<!-- MACROSCOPIC 3D SIMULATION -->
+<section id="simulation">
+  <div class="sim-wrap">
+    <aside class="ctrl-panel">
+      <div class="panel-head">Parameters</div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Sun Angle</span><span class="sl-vl" id="val-sun">45°</span></div>
+        <input class="slider" type="range" id="sunAngle" min="0" max="85" value="45" step="1">
+        <div class="sl-ends"><span>0° overhead</span><span>85° grazing</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Ray Count</span><span class="sl-vl" id="val-rays">16</span></div>
+        <input class="slider" type="range" id="numRays" min="4" max="20" value="16" step="1">
+        <div class="sl-ends"><span>4</span><span>20</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Ridge Height</span><span class="sl-vl violet-vl" id="val-ridge-h">5 μm</span></div>
+        <input class="slider violet-sl" type="range" id="ridgeHeight" min="1" max="20" value="5" step="0.5">
+        <div class="sl-ends"><span>1 μm</span><span>20 μm</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Ridge Spacing</span><span class="sl-vl violet-vl" id="val-ridge-s">10 μm</span></div>
+        <input class="slider violet-sl" type="range" id="ridgeSpacing" min="3" max="28" value="10" step="0.5">
+        <div class="sl-ends"><span>3 μm</span><span>28 μm</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Intensity</span><span class="sl-vl gold-vl" id="val-intensity">1.0×</span></div>
+        <input class="slider gold-sl" type="range" id="lightIntensity" min="0.2" max="2.0" value="1.0" step="0.1">
+        <div class="sl-ends"><span>0.2×</span><span>2.0×</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Speed</span><span class="sl-vl gold-vl" id="val-speed">1.0×</span></div>
+        <input class="slider gold-sl" type="range" id="animSpeed" min="0.25" max="5" value="1" step="0.25">
+        <div class="sl-ends"><span>0.25×</span><span>5×</span></div>
+      </div>
+      <div class="orbit-hint">
+        <div>Left-drag: orbit · Scroll: zoom</div>
+        <div>Right-drag: pan · Double-click: reset</div>
+      </div>
+      <!-- Surface Mode Toggle -->
+      <div class="surface-toggle-block">
+        <div class="panel-head" style="margin-bottom:8px">Surface Mode</div>
+        <button class="btn-surface-toggle" id="surfaceModeBtn">Switch to Flat Panel</button>
+        <p class="surface-mode-desc" id="surfaceModeDesc">Currently showing the <strong>Morpho butterfly nanostructure</strong> — multi-bounce light trapping enabled.</p>
+      </div>
+    </aside>
+
+    <div class="vp-outer" id="vpOuter">
+      <div id="threeContainer"></div>
+      <div class="panel-names">
+        <span class="pname flat-pname">Flat Solar Panel</span>
+        <span class="pname bfly-pname" id="bflyPanelName">Butterfly Wing Panel</span>
+      </div>
+      <div class="vp-legend">
+        <span class="leg"><span class="ld yellow-ld"></span>Incoming</span>
+        <span class="leg"><span class="ld" style="background:#ff8800;box-shadow:0 0 5px #ff8800"></span>Bouncing</span>
+        <span class="leg"><span class="ld green-ld"></span>Absorbed</span>
+        <span class="leg"><span class="ld red-ld"></span>Reflected</span>
+        <span class="leg"><span class="ld cyan-ld"></span>Transmitted</span>
+      </div>
+      <div class="sim-status" id="simStatus">Press Start to begin the 3D simulation</div>
+      <div class="bounce-counter" id="bounceCounter"></div>
+      <div class="micro-view-label" id="microViewLabel"></div>
+      <div class="btn-bar">
+        <button class="btn-start" id="btnStart">Start</button>
+        <button class="btn-ghost" id="btnPause" disabled>Pause</button>
+        <button class="btn-ghost" id="btnReset" disabled>Reset</button>
+        <button class="btn-ghost" id="btnClear" disabled>Clear Rays</button>
+        <button class="btn-micro" id="btnMicro">Micro View</button>
+        <button class="btn-fs" id="btnFullscreen" title="Toggle fullscreen">[ ]</button>
+      </div>
+    </div>
+
+    <aside class="res-panel">
+      <div class="panel-head">Results</div>
+      <div class="res-card cyan-card">
+        <div class="rc-lbl">Flat Panel</div>
+        <div class="rc-eff cyan-col" id="flatEff">—</div>
+        <div class="rc-sub">
+          <span><span class="ld green-ld"></span><b id="flatAbsorbed">—</b> absorbed</span>
+          <span><span class="ld red-ld"></span><b id="flatReflected">—</b> reflected</span>
+          <span><span class="ld cyan-ld"></span><b id="flatTransmitted">—</b> transmitted</span>
+        </div>
+      </div>
+      <div class="res-card violet-card">
+        <div class="rc-lbl" id="bflyResLabel">Butterfly Panel</div>
+        <div class="rc-eff violet-col" id="bflyEff">—</div>
+        <div class="rc-sub">
+          <span><span class="ld green-ld"></span><b id="bflyAbsorbed">—</b> absorbed</span>
+          <span><span class="ld red-ld"></span><b id="bflyReflected">—</b> reflected</span>
+          <span><span class="ld cyan-ld"></span><b id="bflyTransmitted">—</b> transmitted</span>
+        </div>
+      </div>
+      <div class="bar-block">
+        <div class="bar-title">Absorption Comparison</div>
+        <div class="bar-row">
+          <span class="bnm">Flat</span>
+          <div class="bar-trk"><div class="bar flat-bar" id="flatBar"><span class="bv" id="flatBarVal"></span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bnm violet-col">Butterfly</span>
+          <div class="bar-trk"><div class="bar bfly-bar" id="bflyBar"><span class="bv" id="bflyBarVal"></span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bnm gold-col">Gain</span>
+          <div class="bar-trk"><div class="bar gain-bar" id="gainBar"><span class="bv" id="gainBarVal"></span></div></div>
+        </div>
+      </div>
+      <div class="sci-note">
+        <p><strong>Morpho butterfly</strong> wing micro-ridge lattice channels photons through multiple internal reflections between vertical spines and horizontal cross-ribs, increasing photon capture probability before escape.</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- MICROSCOPIC SIMULATION -->
+<section id="microsim" class="microsim-section">
+  <div class="sec-hd">
+    <p class="eyebrow">Nanoscale Surface Physics</p>
+    <h2>Microscopic Structure Comparison</h2>
+    <p class="sec-sub">
+      Left: Flat silicon — photons reflect or absorb after a single interaction.<br>
+      Right: Morpho butterfly lattice — closed-cell cage traps photons through repeated reflections.
+    </p>
+  </div>
+  <div class="micro-wrap">
+    <div class="micro-ctrl-bar">
+      <div class="micro-ctrl-left">
+        <button class="btn-start micro-run-btn" id="btnMicroRun">Run</button>
+        <button class="btn-ghost micro-ctrl-btn" id="btnMicroPause">Pause</button>
+        <button class="btn-ghost micro-ctrl-btn" id="btnMicroClear">Clear</button>
+      </div>
+      <div class="micro-ctrl-right">
+        <span class="micro-hint">Scroll: zoom · Drag: pan · Double-click: reset</span>
+      </div>
+    </div>
+    <canvas id="microCanvas" class="micro-canvas"></canvas>
+    <div class="micro-stats-bar" id="microStatsBar">Run the main simulation first to sync ray statistics here.</div>
+    <div class="micro-legend">
+      <span class="micro-leg-item"><span class="ld yellow-ld"></span>Incoming photon</span>
+      <span class="micro-leg-item"><span class="ld" style="background:#ff8800;box-shadow:0 0 5px #ff8800"></span>Internal bounce</span>
+      <span class="micro-leg-item"><span class="ld green-ld"></span>Absorbed</span>
+      <span class="micro-leg-item"><span class="ld red-ld"></span>Reflected</span>
+      <span class="micro-leg-item"><span class="ld cyan-ld"></span>Transmitted</span>
+    </div>
+    <div class="micro-edu-row">
+      <div class="micro-edu-card cyan-edu">
+        <div class="micro-edu-title">Flat Surface</div>
+        <p>A smooth silicon surface reflects ~31% of incoming photons via Fresnel reflection. Single-pass absorption limits capture to 48–54% at typical sun angles. Transmitted photons are lost.</p>
+      </div>
+      <div class="micro-edu-card violet-edu">
+        <div class="micro-edu-title">Morpho Butterfly Lattice</div>
+        <p>Vertical spines and tapered horizontal lamellae create enclosed cells. Photons bounce repeatedly — each bounce is another absorption opportunity. Multi-bounce trapping achieves &gt;75% capture.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GRAPHS -->
+<section id="graphs" class="microsim-section">
+  <div class="sec-hd">
+    <p class="eyebrow">Scientific Reference Data</p>
+    <h2>Light Interaction Graphs</h2>
+    <p class="sec-sub">
+      Scientific reference curves based on published research on silicon photovoltaics and Morpho butterfly nanostructures.<br>
+      Sources: Vigneron et al. (2003), Koynov et al. (2006), Huang et al. (2007), Fraunhofer ISE (2022).
+    </p>
+  </div>
+  <div class="graphs-grid">
+
+    <!-- A: Absorption vs Wavelength -->
+    <div class="graph-card">
+      <div class="graph-title">Absorption vs Wavelength (nm) — Morpho rhetenor Wing</div>
+      <div class="svg-graph-wrap">
+        <svg id="svgAbsorption" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="graph-species-note">
+        <strong>Species: <em>Morpho rhetenor</em></strong> — Its wing scales contain stacked thin-film lamellae that produce structural blue coloration through thin-film interference, causing a sharp reflectance peak near 450 nm (visible as the absorption dip in the purple curve). Outside this blue band, the multi-layer nanostructure enables high broadband absorption.
+      </div>
+      <div class="graph-source">
+        <strong>Sources:</strong>
+        <a href="https://doi.org/10.1103/PhysRevE.67.036602" target="_blank" rel="noopener">Vigneron et al. (2003)</a> ·
+        <a href="https://doi.org/10.1038/nnano.2007.89" target="_blank" rel="noopener">Huang et al. (2007)</a>
+      </div>
+    </div>
+
+    <!-- B: Reflection vs Incident Angle -->
+    <div class="graph-card">
+      <div class="graph-title">Reflection vs Incident Angle (°)</div>
+      <div class="svg-graph-wrap">
+        <svg id="svgReflection" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="graph-source"><strong>Source:</strong> <a href="https://doi.org/10.1063/1.2364885" target="_blank" rel="noopener">Koynov et al., Applied Physics Letters (2006)</a> — Fresnel equations for c-Si (n ≈ 3.88 at 600 nm).</div>
+    </div>
+
+    <!-- C: Efficiency Comparison -->
+    <div class="graph-card full-width">
+      <div class="graph-title">Light Capture Efficiency Comparison (%)</div>
+      <div class="eff-bars" id="effBars">
+        <div class="eff-row">
+          <div class="eff-label-col">
+            <span class="eff-label">Light Captured — Flat Si</span>
+            <span class="eff-explain">Percentage of incoming sunlight absorbed by a standard flat silicon panel with anti-reflection coating. Real-world baseline for mass-produced panels today.</span>
+          </div>
+          <div class="eff-track"><div class="eff-fill cyan-fill" id="effFlat" style="width:0%"><span class="eff-num" id="effFlatVal">18.7%</span></div></div>
+        </div>
+        <div class="eff-row">
+          <div class="eff-label-col">
+            <span class="eff-label violet-col">Light Captured — Morpho Design</span>
+            <span class="eff-explain">Percentage captured by the Morpho butterfly-inspired nanostructured surface. Multi-bounce trapping significantly boosts absorption compared to flat silicon.</span>
+          </div>
+          <div class="eff-track"><div class="eff-fill violet-fill" id="effBfly" style="width:0%"><span class="eff-num" id="effBflyVal">25.2%</span></div></div>
+        </div>
+        <div class="eff-row">
+          <div class="eff-label-col">
+            <span class="eff-label gold-col">Theoretical Maximum (SQ Limit)</span>
+            <span class="eff-explain">The Shockley–Queisser limit — the absolute maximum efficiency possible for a single-junction silicon solar cell. No real device can exceed this, regardless of surface structure.</span>
+          </div>
+          <div class="eff-track"><div class="eff-fill gold-fill" id="effSQ" style="width:0%"><span class="eff-num" id="effSQVal">29.4%</span></div></div>
+        </div>
+      </div>
+      <div class="graph-source">
+        <strong>Sources:</strong>
+        <a href="https://doi.org/10.1103/PhysRev.120.1149" target="_blank" rel="noopener">Shockley &amp; Queisser (1961)</a> ·
+        <a href="https://www.ise.fraunhofer.de/en/press-media/news/2022/fraunhofer-ise-publishes-solar-cell-efficiency-tables.html" target="_blank" rel="noopener">Fraunhofer ISE (2022)</a> ·
+        <a href="https://doi.org/10.1038/nnano.2007.89" target="_blank" rel="noopener">Huang et al. (2007)</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="team">
+  <div class="sec-hd">
+    <p class="eyebrow">Researchers</p>
+    <h2>The Team</h2>
+    <p class="sec-sub">People behind BioSolarLab</p>
+  </div>
+  <div class="team-grid">
+    <div class="member"><div class="mem-av" style="--ac:#4ade80">AS</div>
+      <h3>Alice Santos</h3><span class="mem-role">Project Lead · Physics</span>
+      <p>Designed the ray-tracing engine and led research on Morpho butterfly nanostructure photonics.</p></div>
+    <div class="member"><div class="mem-av" style="--ac:#00d4ff">BK</div>
+      <h3>Ben Kumar</h3><span class="mem-role">Three.js · Rendering</span>
+      <p>Built the 3D visualization engine with deterministic physics and GPU-accelerated rendering.</p></div>
+    <div class="member"><div class="mem-av" style="--ac:#ffd700">CM</div>
+      <h3>Clara Mendes</h3><span class="mem-role">Frontend · UI Design</span>
+      <p>Developed the interactive scientific dashboard and 3D orbit controls.</p></div>
+    <div class="member"><div class="mem-av" style="--ac:#b44fff">DJ</div>
+      <h3>David Johari</h3><span class="mem-role">Research · Docs</span>
+      <p>Conducted literature review on biomimetic solar cells and prepared the research report.</p></div>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>BioSolarLab © 2025</span><span class="fsep">·</span>
+  <span>Biomimicry × Photovoltaics × Three.js</span><span class="fsep">·</span>
+  <span>Educational Science Project</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
