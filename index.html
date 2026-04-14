@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioSolarLab — 3D Photovoltaic Simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <svg viewBox="0 0 30 30" fill="none" width="26" height="26">
+      <path d="M15 2C8 6 2 12 4 20C6 27 10 29 15 29S24 27 26 20C28 12 22 6 15 2Z" stroke="#00d4ff" stroke-width="1.3"></path>
+      <path d="M15 2C15 2 10 10 10 18C10 24 12.5 29 15 29" stroke="#00d4ff" stroke-width="0.9" opacity=".5"></path>
+      <path d="M15 2C15 2 20 10 20 18C20 24 17.5 29 15 29" stroke="#00d4ff" stroke-width="0.9" opacity=".5"></path>
+      <circle cx="15" cy="15" r="2.8" fill="#ffd700"></circle>
+    </svg>
+    <span class="nav-wordmark">BioSolar<em>Lab</em></span>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link active" href="#simulation">Simulation</a>
+    <a class="nav-link" href="#microsim">Microscopic</a>
+    <a class="nav-link" href="#graphs">Graphs</a>
+    <a class="nav-link" href="#presentation">Presentation</a>
+    <a class="nav-link" href="#team">Team</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-info-global" id="btnInfoGlobal" title="Key Concepts &amp; Explanations">ℹ Info</button>
+    <span class="engine-dot" id="engineDot" style="margin-left:10px"></span>
+  </div>
+</nav>
+
+<!-- ═══════════ INFO MODAL OVERLAY ═══════════ -->
+<div class="info-overlay" id="infoOverlay" role="dialog" aria-modal="true" aria-label="Key Concepts">
+  <div class="info-panel">
+    <div class="info-header">
+      <span class="info-title">📘 Key Concepts</span>
+      <button class="info-close" id="infoClose" aria-label="Close">✕</button>
+    </div>
+    <div class="info-body">
+
+      <div class="info-section" id="info-pti">
+        <div class="info-section-title cyan-col">① Photon Trapping Index (PTI)</div>
+        <p>The Photon Trapping Index measures <strong>how many times a ray interacts inside the nanostructure</strong> on average — before it either escapes or gets absorbed.</p>
+        <div class="info-callout">
+          <span class="info-callout-val violet-col" style="font-size:1.2rem;padding-top:2px">0.88<br><span style="font-size:.65rem;font-weight:600;letter-spacing:-.01em">int/ray</span></span>
+          <span class="info-callout-text"><strong>0.88 interactions/ray</strong> — each photon undergoes 0.88 internal bounces on average before exiting. A PTI of 2.5 interactions/ray means photons bounce 2.5 times on average before escaping or being absorbed. Higher PTI = more absorption opportunities per photon.</span>
+        </div>
+        <p class="info-note">⚠ <strong>PTI is NOT a percentage.</strong> It is a rate: <em>average internal photon interactions per ray</em>. It can exceed 1.0, 2.0, or even 5.0 if photons bounce many times. The Flat Silicon Baseline¹ always scores ≈ 0 because there is no multi-bounce confinement — only a single surface interaction.</p>
+        <p class="info-note">Why it matters: higher PTI = each photon gets more chances to be absorbed = stronger structural efficiency in the Morpho design.</p>
+      </div>
+
+      <div class="info-section" id="info-structural-color">
+        <div class="info-section-title violet-col">② Structural Color (Morpho Butterfly)</div>
+        <p>The vivid blue of a <em>Morpho</em> butterfly wing is <strong>not pigment</strong>. It comes entirely from nano-scale structures interacting with light.</p>
+        <ul class="info-list">
+          <li>The wing contains stacked thin-film lamellae only ~70–100 nm thick.</li>
+          <li>Light reflects from each layer. Waves from different layers add together or cancel (interference).</li>
+          <li>At ~450 nm (blue wavelength) the layers are spaced so reflected waves <em>reinforce</em> each other — producing brilliant blue.</li>
+          <li>At other angles, the path difference changes → color shifts. This is <strong>iridescence</strong>.</li>
+        </ul>
+        <p class="info-note">📌 This is the same principle used in anti-reflection coatings on camera lenses and soap bubbles.</p>
+      </div>
+
+      <div class="info-section" id="info-why-blue">
+        <div class="info-section-title gold-col">③ Why Blue is Favoured</div>
+        <p>The lamella spacing (~70–100 nm) is tuned to constructively reflect wavelengths of <strong>400–500 nm</strong> (the blue range). Other wavelengths are:</p>
+        <ul class="info-list">
+          <li><strong>Absorbed</strong> — longer wavelengths (red, IR) pass through and are absorbed by the dark substrate beneath.</li>
+          <li><strong>Scattered</strong> — mid-wavelengths are scattered at many angles and do not produce a strong peak.</li>
+        </ul>
+        <p class="info-note">For solar cells, this sharp blue-reflection dip is visible in the Absorptance vs Wavelength graph as a notch at ~450 nm in the Morpho curve.</p>
+      </div>
+
+      <div class="info-section" id="info-abs-refl-trans">
+        <div class="info-section-title" style="color:var(--green)">④ Absorption · Reflection · Transmission</div>
+        <div class="info-trio">
+          <div class="info-trio-item" style="border-color:rgba(0,255,136,0.35)">
+            <span class="info-trio-icon green-col">⬤</span>
+            <strong>Absorption</strong>
+            <p>Photon energy is converted to electrical energy (or heat) inside the silicon. This is what we want — more absorption = higher efficiency.</p>
+          </div>
+          <div class="info-trio-item" style="border-color:rgba(255,68,102,0.35)">
+            <span class="info-trio-icon red-col">⬤</span>
+            <strong>Reflection</strong>
+            <p>Photon bounces back off the surface without entering the material. Fresnel reflection causes ~31% loss on bare silicon. Anti-reflection coatings (ARC) reduce this.</p>
+          </div>
+          <div class="info-trio-item" style="border-color:rgba(0,212,255,0.35)">
+            <span class="info-trio-icon cyan-col">⬤</span>
+            <strong>Transmission</strong>
+            <p>Photon passes all the way through the panel without being absorbed. This is wasted energy — thin panels are especially susceptible.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section info-refs">
+        <div class="info-section-title" style="color:var(--t2)">📚 Free Learning Resources</div>
+        <ul class="info-list">
+          <li><a href="https://en.wikipedia.org/wiki/Structural_coloration" target="_blank" rel="noopener noreferrer">Wikipedia — Structural Coloration (overview of interference-based color in nature)</a></li>
+          <li><a href="https://www.sciencefocus.com/nature/how-does-structural-colour-work" target="_blank" rel="noopener noreferrer">BBC Science Focus — How Structural Colour Works (accessible explainer)</a></li>
+          <li><a href="https://www.britannica.com/science/structural-color" target="_blank" rel="noopener noreferrer">Britannica — Structural Color (peer-reviewed encyclopedia entry)</a></li>
+          <li><a href="https://www.energy.gov/eere/solar/how-does-solar-work" target="_blank" rel="noopener noreferrer">U.S. Dept. of Energy — How Solar Works (official government resource)</a></li>
+          <li><a href="https://www.nrel.gov/research/re-photovoltaics.html" target="_blank" rel="noopener noreferrer">NREL — Photovoltaics Research (National Renewable Energy Laboratory)</a></li>
+          <li><a href="https://www.pveducation.org/pvcdrom/design-of-silicon-cells/anti-reflection-coatings" target="_blank" rel="noopener noreferrer">PV Education — Anti-Reflection Coatings for Silicon Solar Cells (open access)</a></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SUPERSCRIPT INFO TOOLTIPS ═══════════ -->
+<div class="sup-tooltip" id="supTooltip" role="tooltip"></div>
+
+<!-- HERO METRICS -->
+<div class="hero-bar">
+  <div class="hm-col">
+    <span class="hm-val cyan-col" id="flatEffTag">—</span>
+    <span class="hm-key">Flat Absorption Ratio <sup class="info-sup" data-tip="abs-refl-trans">ℹ</sup></span>
+  </div>
+  <div class="hm-sep"></div>
+  <div class="hm-col center">
+    <span class="hm-gain" id="gainValue">—</span>
+    <span class="hm-key">Absorption Advantage</span>
+  </div>
+  <div class="hm-sep"></div>
+  <div class="hm-col right">
+    <span class="hm-val violet-col" id="bflyEffTag">—</span>
+    <span class="hm-key">Butterfly Absorption Ratio <sup class="info-sup" data-tip="abs-refl-trans">ℹ</sup></span>
+  </div>
+</div>
+
+<!-- MACROSCOPIC 3D SIMULATION -->
+<section id="simulation">
+  <div class="sim-wrap">
+    <aside class="ctrl-panel">
+      <div class="panel-head">Parameters</div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Sun Angle</span><span class="sl-vl" id="val-sun">45°</span></div>
+        <input class="slider" type="range" id="sunAngle" min="0" max="85" value="45" step="1">
+        <div class="sl-ends"><span>0° overhead</span><span>85° grazing</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Ray Count</span><span class="sl-vl" id="val-rays">16</span></div>
+        <input class="slider" type="range" id="numRays" min="4" max="20" value="16" step="1">
+        <div class="sl-ends"><span>4</span><span>20</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Ridge Height</span><span class="sl-vl violet-vl" id="val-ridge-h">5 μm</span></div>
+        <input class="slider violet-sl" type="range" id="ridgeHeight" min="1" max="20" value="5" step="0.5">
+        <div class="sl-ends"><span>1 μm</span><span>20 μm</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Ridge Spacing</span><span class="sl-vl violet-vl" id="val-ridge-s">10 μm</span></div>
+        <input class="slider violet-sl" type="range" id="ridgeSpacing" min="3" max="28" value="10" step="0.5">
+        <div class="sl-ends"><span>3 μm</span><span>28 μm</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Intensity</span><span class="sl-vl gold-vl" id="val-intensity">1.0×</span></div>
+        <input class="slider gold-sl" type="range" id="lightIntensity" min="0.2" max="2.0" value="1.0" step="0.1">
+        <div class="sl-ends"><span>0.2×</span><span>2.0×</span></div>
+      </div>
+      <div class="sl-group">
+        <div class="sl-row"><span class="sl-nm">Speed</span><span class="sl-vl gold-vl" id="val-speed">1.0×</span></div>
+        <input class="slider gold-sl" type="range" id="animSpeed" min="0.25" max="5" value="1" step="0.25">
+        <div class="sl-ends"><span>0.25×</span><span>5×</span></div>
+      </div>
+      <div class="orbit-hint">
+        <div>Left-drag: orbit · Scroll: zoom</div>
+        <div>Right-drag: pan · Double-click: reset</div>
+      </div>
+
+    </aside>
+
+    <div class="vp-outer" id="vpOuter">
+      <div id="threeContainer"></div>
+      <div class="panel-names">
+        <span class="pname flat-pname">Flat Solar Panel</span>
+        <span class="pname bfly-pname" id="bflyPanelName">Butterfly Wing Panel</span>
+      </div>
+      <div class="vp-legend">
+        <span class="leg"><span class="ld yellow-ld"></span>Incoming</span>
+        <span class="leg"><span class="ld" style="background:#ff8800;box-shadow:0 0 5px #ff8800"></span>Bouncing</span>
+        <span class="leg"><span class="ld green-ld"></span>Absorbed</span>
+        <span class="leg"><span class="ld red-ld"></span>Reflected</span>
+        <span class="leg"><span class="ld cyan-ld"></span>Transmitted</span>
+      </div>
+      <div class="sim-status" id="simStatus">Press Start to begin the 3D simulation</div>
+      <div class="bounce-counter" id="bounceCounter"></div>
+      <div class="micro-view-label" id="microViewLabel"></div>
+      <div class="btn-bar">
+        <button class="btn-start" id="btnStart">Start</button>
+        <button class="btn-ghost" id="btnPause" disabled>Pause</button>
+        <button class="btn-ghost" id="btnReset" disabled>Reset</button>
+        <button class="btn-ghost" id="btnClear" disabled>Clear Rays</button>
+        <button class="btn-micro" id="btnMicro">Micro View</button>
+        <button class="btn-fs" id="btnFullscreen" title="Toggle fullscreen">[ ]</button>
+      </div>
+    </div>
+
+    <aside class="res-panel">
+      <div class="panel-head">Results</div>
+      <div class="res-card cyan-card">
+        <div class="rc-lbl">Flat Panel</div>
+        <div class="rc-eff cyan-col" id="flatEff">—</div>
+        <div class="rc-sub">
+          <span><span class="ld green-ld"></span><b id="flatAbsorbed">—</b> absorbed</span>
+          <span><span class="ld red-ld"></span><b id="flatReflected">—</b> reflected</span>
+          <span><span class="ld cyan-ld"></span><b id="flatTransmitted">—</b> transmitted</span>
+        </div>
+      </div>
+      <div class="res-card violet-card">
+        <div class="rc-lbl" id="bflyResLabel">Butterfly Panel</div>
+        <div class="rc-eff violet-col" id="bflyEff">—</div>
+        <div class="rc-sub">
+          <span><span class="ld green-ld"></span><b id="bflyAbsorbed">—</b> absorbed</span>
+          <span><span class="ld red-ld"></span><b id="bflyReflected">—</b> reflected</span>
+          <span><span class="ld cyan-ld"></span><b id="bflyTransmitted">—</b> transmitted</span>
+        </div>
+      </div>
+      <div class="bar-block">
+        <div class="bar-title">Absorption Comparison</div>
+        <div class="bar-row">
+          <span class="bnm">Flat</span>
+          <div class="bar-trk"><div class="bar flat-bar" id="flatBar"><span class="bv" id="flatBarVal"></span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bnm violet-col">Butterfly</span>
+          <div class="bar-trk"><div class="bar bfly-bar" id="bflyBar"><span class="bv" id="bflyBarVal"></span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bnm gold-col">Gain</span>
+          <div class="bar-trk"><div class="bar gain-bar" id="gainBar"><span class="bv" id="gainBarVal"></span></div></div>
+        </div>
+      </div>
+      <!-- Live Trapping Index metric -->
+      <div class="res-card trap-card">
+        <div class="rc-lbl" style="color:#ffd700">⚡ Photon Trapping Index (PTI) <sup class="info-sup" data-tip="pti" data-section="info-pti">ℹ</sup></div>
+        <div class="rc-eff trap-col" id="trapIndex">—</div>
+        <div class="rc-sub" style="color:#9095b8">
+          <span>Avg internal photon interactions<sup class="info-sup" data-tip="internal-interactions" style="margin-left:3px">ℹ</sup> per ray <em style="color:var(--t3)">(rate, not a %)</em></span>
+        </div>
+        <div class="trap-meter-wrap">
+          <div class="trap-meter-track">
+            <div class="trap-meter-fill" id="trapMeterFill" style="width:0%"></div>
+          </div>
+          <span class="trap-meter-hint" id="trapMeterHint">run simulation to measure</span>
+        </div>
+      </div>
+      <div class="sci-note">
+        <p><strong>Morpho butterfly</strong> wing micro-ridge lattice channels photons through multiple internal reflections between vertical spines and horizontal cross-ribs, increasing photon capture probability before escape.</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- MICROSCOPIC SIMULATION -->
+<section id="microsim" class="microsim-section">
+  <div class="sec-hd">
+    <p class="eyebrow">Nanoscale Surface Physics</p>
+    <h2>Microscopic Structure Comparison</h2>
+    <p class="sec-sub">
+      Left: Flat silicon — photons reflect or absorb after a single interaction.<br>
+      Right: Morpho butterfly lattice — closed-cell cage traps photons through repeated reflections.
+    </p>
+  </div>
+  <div class="micro-wrap">
+    <div class="micro-ctrl-bar">
+      <div class="micro-ctrl-left">
+        <button class="btn-start micro-run-btn" id="btnMicroRun">Run</button>
+        <button class="btn-ghost micro-ctrl-btn" id="btnMicroPause">Pause</button>
+        <button class="btn-ghost micro-ctrl-btn" id="btnMicroClear">Clear</button>
+      </div>
+      <div class="micro-ctrl-right">
+        <span class="micro-hint">Scroll: zoom · Drag: pan · Double-click: reset</span>
+      </div>
+    </div>
+    <canvas id="microCanvas" class="micro-canvas"></canvas>
+    <div class="micro-stats-bar" id="microStatsBar">Run the main simulation first to sync ray statistics here.</div>
+    <div class="micro-legend">
+      <span class="micro-leg-item"><span class="ld yellow-ld"></span>Incoming photon</span>
+      <span class="micro-leg-item"><span class="ld" style="background:#ff8800;box-shadow:0 0 5px #ff8800"></span>Internal bounce</span>
+      <span class="micro-leg-item"><span class="ld green-ld"></span>Absorbed</span>
+      <span class="micro-leg-item"><span class="ld red-ld"></span>Reflected</span>
+      <span class="micro-leg-item"><span class="ld cyan-ld"></span>Transmitted</span>
+    </div>
+    <div class="micro-edu-row">
+      <div class="micro-edu-card cyan-edu">
+        <div class="micro-edu-title">Flat Surface</div>
+        <p>A smooth silicon surface reflects ~31% of incoming photons via Fresnel reflection. Single-pass absorption limits capture to 48–54% at typical sun angles. Transmitted photons are lost.</p>
+      </div>
+      <div class="micro-edu-card violet-edu">
+        <div class="micro-edu-title">Morpho Butterfly Lattice</div>
+        <p>Vertical spines and tapered horizontal lamellae create enclosed cells. Photons bounce repeatedly — each bounce is another absorption opportunity. Multi-bounce trapping achieves &gt;75% capture.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GRAPHS -->
+<section id="graphs" class="microsim-section">
+  <div class="sec-hd">
+    <p class="eyebrow">Scientific Reference Data</p>
+    <h2>Light Interaction Graphs</h2>
+    <p class="sec-sub">
+      Reference curves based on open-access research on silicon photovoltaics and Morpho butterfly nanostructures.<br>
+      All sources are freely accessible — see links below each graph.
+    </p>
+  </div>
+  <div class="graphs-grid">
+
+    <!-- A: Absorption vs Wavelength -->
+    <div class="graph-card">
+      <div class="graph-title">
+        Absorptance vs Wavelength λ (nm) — <em>Morpho rhetenor</em> Wing
+        <sup class="info-sup" data-tip="structural-color" data-section="info-structural-color">ℹ</sup>
+      </div>
+      <div class="graph-context">📊 <strong>What this shows:</strong> How much light each surface absorbs at each wavelength. Higher = better solar capture. The dip in the Morpho curve at ~450 nm is the <strong>structural blue-reflection peak</strong> — a consequence of <strong>Optical Confinement<sup class="info-sup" data-tip="optical-confinement">ℹ</sup></strong> geometry, not pigment. Outside this dip, the Morpho nanostructure achieves significantly higher absorptance than the <strong>Flat Silicon Baseline<sup class="info-sup" data-tip="flat-baseline">ℹ</sup></strong>.</div>
+      <div class="svg-graph-wrap">
+        <svg id="svgAbsorption" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="graph-species-note">
+        <strong>Species: <em>Morpho rhetenor</em></strong> — Its wing scales contain stacked thin-film lamellae that produce structural blue coloration through thin-film interference, causing a sharp reflectance peak near 450 nm (visible as the absorption dip in the purple curve). Outside this blue band, the multi-layer nanostructure enables high broadband absorption.
+      </div>
+      <div class="graph-source">
+        <strong>Sources (free access):</strong>
+        <a href="https://en.wikipedia.org/wiki/Structural_coloration" target="_blank" rel="noopener noreferrer">Wikipedia — Structural Coloration</a> ·
+        <a href="https://www.britannica.com/science/structural-color" target="_blank" rel="noopener noreferrer">Britannica — Structural Color</a>
+      </div>
+    </div>
+
+    <!-- B: Reflection vs Incident Angle -->
+    <div class="graph-card">
+      <div class="graph-title">
+        Reflectance vs Incident Angle θ (°)
+        <sup class="info-sup" data-tip="abs-refl-trans" data-section="info-abs-refl-trans">ℹ</sup>
+      </div>
+      <div class="graph-context">📊 <strong>What this shows:</strong> As sun angle increases (grazing light), the <strong>Flat Silicon Baseline<sup class="info-sup" data-tip="flat-baseline">ℹ</sup></strong> loses more photons to Fresnel reflection. The Morpho Structure maintains low reflectance up to ~50° due to <strong>Optical Confinement<sup class="info-sup" data-tip="optical-confinement">ℹ</sup></strong> — multi-bounce trapping within the ridge lattice.</div>
+      <div class="svg-graph-wrap">
+        <svg id="svgReflection" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="graph-source">
+        <strong>Source (free access):</strong>
+        <a href="https://www.pveducation.org/pvcdrom/design-of-silicon-cells/anti-reflection-coatings" target="_blank" rel="noopener noreferrer">PV Education — Anti-Reflection Coatings &amp; Fresnel Equations for Silicon</a>
+      </div>
+    </div>
+
+    <!-- C: Efficiency Comparison -->
+    <div class="graph-card full-width">
+      <div class="graph-title">
+        Light Capture Efficiency Comparison (%)
+        <sup class="info-sup" data-tip="abs-refl-trans" data-section="info-abs-refl-trans">ℹ</sup>
+      </div>
+      <div class="graph-context">📊 <strong>What this shows:</strong> Real-world efficiency benchmarks. The Morpho-inspired design captures more light than flat silicon but still sits below the theoretical maximum for any single-junction silicon cell.</div>
+      <div class="eff-bars" id="effBars">
+        <div class="eff-row">
+          <div class="eff-label-col">
+            <span class="eff-label">Light Captured — Flat Si</span>
+            <span class="eff-explain">Percentage of incoming sunlight absorbed by a standard flat silicon panel with anti-reflection coating. Real-world baseline for mass-produced panels today.</span>
+          </div>
+          <div class="eff-track"><div class="eff-fill cyan-fill" id="effFlat" style="width:0%"><span class="eff-num" id="effFlatVal">18.7%</span></div></div>
+        </div>
+        <div class="eff-row">
+          <div class="eff-label-col">
+            <span class="eff-label violet-col">Light Captured — Morpho Design</span>
+            <span class="eff-explain">Percentage captured by the Morpho butterfly-inspired nanostructured surface. Multi-bounce trapping significantly boosts absorption compared to flat silicon.</span>
+          </div>
+          <div class="eff-track"><div class="eff-fill violet-fill" id="effBfly" style="width:0%"><span class="eff-num" id="effBflyVal">25.2%</span></div></div>
+        </div>
+        <div class="eff-row">
+          <div class="eff-label-col">
+            <span class="eff-label gold-col">Theoretical Maximum (SQ Limit)</span>
+            <span class="eff-explain">The Shockley–Queisser limit — the absolute maximum efficiency possible for a single-junction silicon solar cell. No real device can exceed this, regardless of surface structure.</span>
+          </div>
+          <div class="eff-track"><div class="eff-fill gold-fill" id="effSQ" style="width:0%"><span class="eff-num" id="effSQVal">29.4%</span></div></div>
+        </div>
+      </div>
+      <div class="graph-source">
+        <strong>Sources (free access):</strong>
+        <a href="https://www.energy.gov/eere/solar/how-does-solar-work" target="_blank" rel="noopener noreferrer">U.S. Dept. of Energy — How Solar Works</a> ·
+        <a href="https://www.pveducation.org/pvcdrom/solar-cell-operation/shockley-queisser-limit" target="_blank" rel="noopener noreferrer">PV Education — Shockley–Queisser Efficiency Limit</a> ·
+        <a href="https://www.nrel.gov/research/re-photovoltaics.html" target="_blank" rel="noopener noreferrer">NREL — Photovoltaics Research</a>
+      </div>
+    </div>
+
+    <!-- D: Photon Trapping Index (PTI) — Live -->
+    <div class="graph-card full-width trap-graph-card">
+      <div class="graph-title">
+        🔥 Photon Trapping Index (PTI)<sup class="info-sup" data-tip="pti" data-section="info-pti" style="margin-left:6px">ℹ</sup> — Live
+        <span class="trap-live-badge" id="trapLiveBadge">LIVE</span>
+      </div>
+      <div class="graph-context">📊 <strong>What this shows:</strong> The <strong>Photon Trapping Index (PTI)</strong><sup class="info-sup" data-tip="pti" data-section="info-pti">ℹ</sup> — average number of <strong>internal photon interactions<sup class="info-sup" data-tip="internal-interactions">ℹ</sup> per ray</strong> inside the Morpho nanostructure across <strong>simulation iterations<sup class="info-sup" data-tip="simulation-iterations">ℹ</sup></strong>. Higher PTI = stronger <strong>optical confinement<sup class="info-sup" data-tip="optical-confinement">ℹ</sup></strong>. PTI is a <em>rate</em>, not a percentage. The <strong>Flat Silicon Baseline<sup class="info-sup" data-tip="flat-baseline">ℹ</sup></strong> always scores ≈ 0.</div>
+      <div class="trap-graph-subhead">
+        Measures the <strong>average internal photon interactions per ray</strong> inside the Morpho nanostructure per simulation iteration.
+        Colour zones: <span style="color:#ff6060">🔴 0–1 Low Optical Confinement</span> · <span style="color:#ffc840">🟡 1–2 Moderate Light Trapping</span> · <span style="color:#60e090">🟢 2+ High Photon Confinement</span>
+      </div>
+      <div class="svg-graph-wrap">
+        <svg id="svgTrapping" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="trap-legend-row">
+        <span><span style="display:inline-block;width:14px;height:3px;background:#b44fff;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Morpho Structure Trapping Index<sup class="info-sup" data-tip="pti" data-section="info-pti" style="margin-left:3px">ℹ</sup></span>
+        <span style="margin-left:24px"><span style="display:inline-block;width:14px;height:3px;background:#00d4ff;border-radius:2px;vertical-align:middle;margin-right:6px"></span>Flat Silicon Baseline<sup class="info-sup" data-tip="flat-baseline" style="margin-left:3px">ℹ</sup> (≈ 0 interactions/ray)</span>
+        <span class="trap-interpretation" id="trapInterpretation"></span>
+      </div>
+      <div class="trap-trend-row" id="trapTrendRow">
+        <span class="trap-trend-key">Trend:</span>
+        <span class="trap-trend-val" id="trapTrendVal">—</span>
+        <span class="trap-trend-sep">·</span>
+        <span class="trap-trend-interp" id="trapTrendInterp">Run the simulation to see the trend</span>
+      </div>
+      <div class="graph-source">
+        <strong>Formula (PTI):</strong> PTI(t) = Σ(internal photon interactions of all Morpho rays) ÷ total rays per simulation iteration<sup class="info-sup" data-tip="simulation-iterations">ℹ</sup> &nbsp;·&nbsp;
+        PTI is a <strong>rate</strong> (interactions/ray), not a percentage. Can exceed 1.0. Values ≥ 2.0 indicate High Photon Confinement<sup class="info-sup" data-tip="optical-confinement">ℹ</sup>.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     PDF PRESENTATION VIEWER — Secure, canvas-rendered, view-only
+     Convert PPT → PDF → Upload. No direct file URL exposed.
+═══════════════════════════════════════════════════════ -->
+<section id="presentation" class="microsim-section pdf-section">
+  <div class="sec-hd">
+    <p class="eyebrow">Secure Presentation Mode</p>
+    <h2>📄 PDF Presentation Viewer</h2>
+    <p class="sec-sub">
+      Upload a PDF (converted from PowerPoint) to view it securely inside BioSolarLab.<br>
+      Rendered via <strong>PDF.js canvas</strong> — no direct file link exposed, right-click &amp; text-selection disabled.
+    </p>
+  </div>
+  <div class="pdf-viewer-wrap" id="pdfViewerWrap">
+
+    <!-- Upload zone (shown when no PDF loaded) -->
+    <div class="pdf-upload-area" id="pdfUploadArea">
+      <div class="pdf-upload-icon">📂</div>
+      <p class="pdf-upload-title">No presentation loaded</p>
+      <p class="pdf-upload-hint">
+        Convert your PowerPoint → PDF, then upload here.<br>
+        File is rendered securely as canvas — no download link is created or exposed.
+      </p>
+      <label class="btn-pdf-upload" for="pdfFileInput">📤 Upload PDF</label>
+      <input type="file" id="pdfFileInput" accept=".pdf" style="display:none">
+      <div class="pdf-security-badge">🔒 View-only · PDF.js Canvas · No Direct File URL</div>
+    </div>
+
+    <!-- Viewer (shown after PDF loaded) -->
+    <div class="pdf-viewer" id="pdfViewer" style="display:none">
+      <div class="pdf-toolbar">
+        <div class="pdf-toolbar-left">
+          <button class="btn-pdf-ctrl" id="btnPdfPrev" disabled>‹ Prev</button>
+          <span class="pdf-page-info" id="pdfPageInfo">Page 1 of 1</span>
+          <button class="btn-pdf-ctrl" id="btnPdfNext" disabled>Next ›</button>
+        </div>
+        <div class="pdf-toolbar-right">
+          <span class="pdf-filename" id="pdfFilename"></span>
+          <button class="btn-pdf-ctrl" id="btnPdfFs">⛶ Fullscreen</button>
+          <label class="btn-pdf-ctrl btn-pdf-new" for="pdfFileInput">📂 Change PDF</label>
+        </div>
+      </div>
+      <div class="pdf-canvas-area" id="pdfCanvasArea">
+        <canvas id="pdfCanvas" class="pdf-canvas"></canvas>
+        <div class="pdf-loading" id="pdfLoading" style="display:none">
+          <div class="pdf-spinner"></div>
+          <span>Rendering page…</span>
+        </div>
+      </div>
+      <div class="pdf-security-bar">
+        🔒 View-only mode · Rendered via PDF.js canvas · Right-click &amp; text selection disabled · No file URL exposed
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="team">
+  <div class="sec-hd">
+    <p class="eyebrow">Researchers</p>
+    <h2>The Team</h2>
+    <p class="sec-sub">People behind BioSolarLab</p>
+  </div>
+  <div class="team-grid">
+    <div class="member"><div class="mem-av" style="--ac:#4ade80">AG</div>
+      <h3>Aadi Gulhane</h3><span class="mem-role">Roll No: I021</span></div>
+    <div class="member"><div class="mem-av" style="--ac:#00d4ff">CB</div>
+      <h3>Chaitanya Bhosale</h3><span class="mem-role">Roll No: I012</span></div>
+    <div class="member"><div class="mem-av" style="--ac:#ffd700">PJ</div>
+      <h3>Priyansh Joshi</h3><span class="mem-role">Roll No: I031</span></div>
+    <div class="member"><div class="mem-av" style="--ac:#b44fff">CA</div>
+      <h3>Chaitanya Alle</h3><span class="mem-role">Roll No: I004</span></div>
+    <div class="member"><div class="mem-av" style="--ac:#ff6b6b">PD</div>
+      <h3>Parshva Doshi</h3><span class="mem-role">Roll No: I017</span></div>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>BioSolarLab © 2025</span><span class="fsep">·</span>
+  <span>Biomimicry × Photovoltaics × Three.js</span><span class="fsep">·</span>
+  <span>Educational Science Project</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
